@@ -26,6 +26,10 @@ connection.once('open', () => {
   console.log('*** MongoDB database connection established successfully ***');
 });
 
+const authRouter = require('./routes/auth');
+
+app.use('/auth', authRouter);
+
 app.get('/', (req, res) => {
   res.json({ message: `Server is running on port: ${port}` });
 });
