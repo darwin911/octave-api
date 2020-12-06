@@ -10,5 +10,21 @@ router.route('/users').get(async (req, res) => {
     console.error(error);
   }
 });
+// Register
+router.route('/register').get(async (req, res) => {
+  try {
+    res.send('/register');
+  } catch (error) {
+    console.error(error);
+  }
+});
+// Login
+router.route('/login').get(async (req, res) => {
+  try {
+    res.send('/login');
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 module.exports = router;
