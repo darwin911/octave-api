@@ -10,4 +10,5 @@ const UserSchema = new mongoose.Schema({
 
 const User = connection.model('User', UserSchema);
 
-module.exports = User;
+// Expose the connection
+module.exports = connection;
