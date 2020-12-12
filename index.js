@@ -19,8 +19,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-require('./config/passport');
-
 const sessionStore = new MongoStore({
   mongooseConnection: connection,
   collection: 'sessions',
@@ -29,6 +27,8 @@ const sessionStore = new MongoStore({
 /**
  * -------------- PASSPORT AUTHENTICATION ----------------
  */
+
+require('./config/passport');
 
 app.use(passport.initialize());
 app.use(passport.session());

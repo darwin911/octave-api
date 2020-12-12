@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const passport = require('passport');
-const User = require('../models/user.model');
+const generatePassword = require('../lib/passwordUtils').generatePassword;
+const connection = require('../config/database');
+const User = connection.models.User;
+console.log('models:', connection.models);
 
 // Get All Users
 router.route('/users').get(async (req, res) => {
@@ -17,10 +20,25 @@ router.route('/users').get(async (req, res) => {
  */
 
 // TODO
-router.post('/login', (req, res, next) => {});
+router.post('/login', passport.authenticate('local'), (req, res, next) => {
+  res.send({ msg: '/login' });
+});
 
 // TODO
-router.post('/register', (req, res, next) => {});
+router.post('/register', (req, res, next) => {
+  const { salt, hash } = generatePassword(req.body.pw);
+
+  const newUser = new User({
+    username: req.body.uname,
+    hash: hash,
+    salt: salt,
+  });
+
+  newUser.save().then((user) => {
+    console.log(user);
+    res.send({ user });
+  });
+});
 
 /**
  * -------------- GET ROUTES ----------------
