@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const connection = mongoose.connection;
 
 // Creates simple schema for a User.  The hash and salt are derived from the user's given password when they register
 const UserSchema = new mongoose.Schema({
@@ -7,7 +8,6 @@ const UserSchema = new mongoose.Schema({
   salt: String,
 });
 
-// const User = mongoose.model('User', userSchema);
 const User = connection.model('User', UserSchema);
 
 module.exports = User;

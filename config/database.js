@@ -20,5 +20,9 @@ const connection = mongoose.createConnection(conn, {
   useUnifiedTopology: true,
 });
 
+connection.once('open', () => {
+  console.log('*** MongoDB database connection established successfully ***');
+});
+
 // Expose the connection
 module.exports = connection;

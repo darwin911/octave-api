@@ -31,24 +31,6 @@ app.use((req, res, next) => {
 });
 
 /**
- * -------------- DATABASE CONNECTION ----------------
- */
-
-const uri = process.env.MONGODB_URI;
-
-mongoose.connect(uri, {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-  useCreateIndex: true,
-});
-
-const connection = mongoose.connection;
-
-connection.once('open', () => {
-  console.log('*** MongoDB database connection established successfully ***');
-});
-
-/**
  * -------------- ROUTES ----------------
  */
 
