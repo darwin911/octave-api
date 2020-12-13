@@ -9,6 +9,12 @@ const customFields = {
   passwordField: 'pw',
 };
 
+/**
+ * @method verifyCallback
+ * @param {string} username
+ * @param {string} password
+ * @param {function} done
+ */
 const verifyCallback = (username, password, done) => {
   User.findOne({ username: username })
     .then((user) => {
