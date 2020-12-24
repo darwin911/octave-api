@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const passport = require('passport');
 const generatePassword = require('../lib/passwordUtils').generatePassword;
+const validPassword = require('../lib/passwordUtils').validPassword;
 const connection = require('../config/database');
-const isAuth = require('./authMiddleware').isAuth;
+// const isAuth = require('./authMiddleware').isAuth;
 const User = connection.models.User;
 
 // Get All Users
@@ -20,28 +21,43 @@ router.route('/users').get(async (req, res) => {
  */
 
 // TODO
-router.post(
-  '/login',
-  passport.authenticate('local', {
-    failureRedirect: '/login-failure',
-    successRedirect: 'login-success',
-  })
-);
+router.post('/login', (req, res, next) => {
+  User.findById({ email: req.body.email }).then((user) => {
+    if (!user) {
+      //
+    }
+
+    const isValid = validPassword(req.body.password, user.hash, user.salt);
+  });
+});
 
 // TODO
-router.post('/register', (req, res, next) => {
+router.post('/auth/register', async (req, res, next) => {
   const { salt, hash } = generatePassword(req.body.pw);
 
-  const newUser = new User({
+  const data = {
     username: req.body.uname,
+    email: req.body.email,
     hash: hash,
     salt: salt,
-  });
+  };
 
-  newUser.save().then((user) => {
-    console.log(user);
-    res.send({ user });
-  });
+  try {
+    const emailInUse = await User.findOne({ email: req.body.email });
+
+    if (!emailInUse) {
+      const newUser = await new User(data);
+      await newUser.save();
+      res.status(201).send(newUser);
+    } else {
+      res.status(409).json({ msg: 'Email is already in use.', error: 409 });
+    }
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ msg: 'Something went wrong', error, errorCode: 500 });
+  }
 });
 
 /**
@@ -50,21 +66,6 @@ router.post('/register', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   res.send('<h1>Home</h1><p>Please <a href="/register">register</a></p>');
-});
-
-router.get('/protected-route', isAuth, (req, res, next) => {
-  res.send('You made it to the protected route.');
-  if (req.isAuthenticated()) {
-    res.send(`
-    <h1>You are authenticated</h1>
-    <p><a href="/logout">Logout and reload.</a></p>
-    `);
-  } else {
-    res.send(`
-    <h1>You are not authenticad.</h1>
-    <p><a href="/login">Login</a></p>
-    `);
-  }
 });
 
 router.get('/logout', (req, res, next) => {
@@ -95,13 +96,26 @@ router.get('/register', (req, res, next) => {
 });
 
 router.get('/login-success', (req, res, next) => {
-  res.send(
-    '<p>You successfully logged in. --> <a href="/protected-route">Go to protected route</a></p>'
-  );
+  console.log(req.body);
+  try {
+    // User.findOne({
+    //   where: {
+    //     email: req.body.email,
+    //   },
+    // });
+    res.json({
+      msg: 'You successfully logged in.',
+      redirect: '/home',
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 router.get('/login-failure', (req, res, next) => {
-  res.send('You entered the wrong password.');
+  res.status(401).json({
+    msg: 'You entered the wrong password.',
+  });
 });
 
 module.exports = router;

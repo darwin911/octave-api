@@ -1,51 +1,40 @@
 const passport = require('passport');
-const { validPassword } = require('../lib/passwordUtils');
-const LocalStrategy = require('passport-local').Strategy;
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
 const connection = require('./database');
+const path = require('path');
+const fs = require('fs');
 const User = connection.models.User;
 
-const customFields = {
-  usernameField: 'uname',
-  passwordField: 'pw',
+const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
+const PUB_KEY = fs.readFileSync(pathToKey, 'utf-8');
+
+const options = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: PUB_KEY,
+  algorithms: ['RS256'],
 };
 
 /**
  * @method verifyCallback
- * @param {string} username
- * @param {string} password
+ * @param {object} jwt_payload
  * @param {function} done
  */
-const verifyCallback = (username, password, done) => {
-  User.findOne({ username: username })
-    .then((user) => {
-      if (!user) {
-        return done(null, false); // No Error; No User; Returns 401
-      }
+const verifyCallback = (jwt_payload, done) => {
+  console.log(jwt_payload);
 
-      const isValid = validPassword(password, user.hash, user.salt);
-
-      if (isValid) {
-        return done(null, user);
-      } else {
-        return done(null, false);
-      }
-    })
-    .catch((err) => done(err));
+  User.findOne({ _id: jwt_payload.sub }, (err, user) => {
+    if (err) {
+      return done(err, false);
+    }
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  });
 };
 
-const strategy = new LocalStrategy(customFields, verifyCallback);
-
-passport.use(strategy);
-
-passport.serializeUser((user, done) => {
-  console.log('Serializing user...', user.id);
-  done(null, user.id);
-});
-
-passport.deserializeUser((userId, done) => {
-  User.findById(userId)
-    .then((user) => {
-      done(null, user);
-    })
-    .catch((err) => done(err));
-});
+module.exports = (passport) => {
+  passport.use(new JwtStrategy(options, verifyCallback));
+};
