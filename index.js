@@ -19,37 +19,37 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionStore = new MongoStore({
-  mongooseConnection: connection,
-  collection: 'sessions',
-});
+// const sessionStore = new MongoStore({
+//   mongooseConnection: connection,
+//   collection: 'sessions',
+// });
 
 /**
  * -------------- PASSPORT AUTHENTICATION ----------------
  */
 
-require('./config/passport');
+require('./config/passport')(passport);
 
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 
-app.use(
-  session({
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: true,
-    store: sessionStore,
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24, // Equals 1 day
-    },
-  })
-);
+// app.use(
+//   session({
+//     secret: process.env.SECRET,
+//     resave: false,
+//     saveUninitialized: true,
+//     store: sessionStore,
+//     cookie: {
+//       maxAge: 1000 * 60 * 60 * 24, // Equals 1 day
+//     },
+//   })
+// );
 
-app.use((req, res, next) => {
-  console.log(req.session);
-  console.log(req.user);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(req.session);
+//   console.log(req.user);
+//   next();
+// });
 
 /**
  * -------------- ROUTES ----------------

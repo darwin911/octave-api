@@ -1,9 +1,19 @@
 const router = require('express').Router();
 const passport = require('passport');
-const generatePassword = require('../lib/passwordUtils').generatePassword;
+const generatePassword = require('../lib/utils').generatePassword;
+const validPassword = require('../lib/utils').validPassword;
 const connection = require('../config/database');
-const isAuth = require('./authMiddleware').isAuth;
+const utils = require('../lib/utils');
+// const isAuth = require('./authMiddleware').isAuth;
 const User = connection.models.User;
+
+router.get(
+  '/auth/protected',
+  passport.authenticate('jwt', { session: false }),
+  (req, res, next) => {
+    res.status(200).json({ success: true, msg: 'You are authorized!' });
+  }
+);
 
 // Get All Users
 router.route('/users').get(async (req, res) => {
@@ -20,28 +30,70 @@ router.route('/users').get(async (req, res) => {
  */
 
 // TODO
-router.post(
-  '/login',
-  passport.authenticate('local', {
-    failureRedirect: '/login-failure',
-    successRedirect: 'login-success',
-  })
-);
+router.post('/auth/login', (req, res, next) => {
+  User.findOne({ email: req.body.email })
+    .then((user) => {
+      if (!user) {
+        res.status(401).json({ success: false, msg: 'Could not find user.' });
+      }
+
+      const isValid = utils.validPassword(
+        req.body.password,
+        user.hash,
+        user.salt
+      );
+
+      if (isValid) {
+        const tokenObject = utils.issueJWT(user);
+
+        res
+          .status(200)
+          .json({ success: true, user: user, token: tokenObject.token });
+      } else {
+        res.status(401).json({
+          success: false,
+          msg: 'Sorry, it looks like you have entered invalid credentials.',
+        });
+      }
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 // TODO
-router.post('/register', (req, res, next) => {
+router.post('/auth/register', async (req, res, next) => {
   const { salt, hash } = generatePassword(req.body.pw);
 
-  const newUser = new User({
+  const data = {
     username: req.body.uname,
+    email: req.body.email,
     hash: hash,
     salt: salt,
-  });
+  };
 
-  newUser.save().then((user) => {
-    console.log(user);
-    res.send({ user });
-  });
+  try {
+    const emailInUse = await User.findOne({ email: req.body.email });
+
+    if (!emailInUse) {
+      const newUser = await new User(data);
+      await newUser.save();
+      const jwt = utils.issueJWT(newUser);
+      res.status(201).send({
+        success: true,
+        user: newUser,
+        token: jwt.token,
+        expiresIn: jwt.expires,
+      });
+    } else {
+      res.status(409).json({ msg: 'Email is already in use.', error: 409 });
+    }
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ msg: 'Something went wrong', error, errorCode: 500 });
+  }
 });
 
 /**
@@ -50,21 +102,6 @@ router.post('/register', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   res.send('<h1>Home</h1><p>Please <a href="/register">register</a></p>');
-});
-
-router.get('/protected-route', isAuth, (req, res, next) => {
-  res.send('You made it to the protected route.');
-  if (req.isAuthenticated()) {
-    res.send(`
-    <h1>You are authenticated</h1>
-    <p><a href="/logout">Logout and reload.</a></p>
-    `);
-  } else {
-    res.send(`
-    <h1>You are not authenticad.</h1>
-    <p><a href="/login">Login</a></p>
-    `);
-  }
 });
 
 router.get('/logout', (req, res, next) => {
@@ -95,13 +132,26 @@ router.get('/register', (req, res, next) => {
 });
 
 router.get('/login-success', (req, res, next) => {
-  res.send(
-    '<p>You successfully logged in. --> <a href="/protected-route">Go to protected route</a></p>'
-  );
+  console.log(req.body);
+  try {
+    // User.findOne({
+    //   where: {
+    //     email: req.body.email,
+    //   },
+    // });
+    res.json({
+      msg: 'You successfully logged in.',
+      redirect: '/home',
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 router.get('/login-failure', (req, res, next) => {
-  res.send('You entered the wrong password.');
+  res.status(401).json({
+    msg: 'You entered the wrong password.',
+  });
 });
 
 module.exports = router;
