@@ -7,6 +7,14 @@ const utils = require('../lib/utils');
 // const isAuth = require('./authMiddleware').isAuth;
 const User = connection.models.User;
 
+router.get(
+  '/auth/protected',
+  passport.authenticate('jwt', { session: false }),
+  (req, res, next) => {
+    res.status(200).json({ success: true, msg: 'You are authorized!' });
+  }
+);
+
 // Get All Users
 router.route('/users').get(async (req, res) => {
   try {
@@ -22,14 +30,35 @@ router.route('/users').get(async (req, res) => {
  */
 
 // TODO
-router.post('/login', (req, res, next) => {
-  User.findById({ email: req.body.email }).then((user) => {
-    if (!user) {
-      //
-    }
+router.post('/auth/login', (req, res, next) => {
+  User.findOne({ email: req.body.email })
+    .then((user) => {
+      if (!user) {
+        res.status(401).json({ success: false, msg: 'Could not find user.' });
+      }
 
-    const isValid = validPassword(req.body.password, user.hash, user.salt);
-  });
+      const isValid = utils.validPassword(
+        req.body.password,
+        user.hash,
+        user.salt
+      );
+
+      if (isValid) {
+        const tokenObject = utils.issueJWT(user);
+
+        res
+          .status(200)
+          .json({ success: true, user: user, token: tokenObject.token });
+      } else {
+        res.status(401).json({
+          success: false,
+          msg: 'Sorry, it looks like you have entered invalid credentials.',
+        });
+      }
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
 // TODO
