@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const passport = require('passport');
-const generatePassword = require('../lib/passwordUtils').generatePassword;
-const validPassword = require('../lib/passwordUtils').validPassword;
+const generatePassword = require('../lib/utils').generatePassword;
+const validPassword = require('../lib/utils').validPassword;
 const connection = require('../config/database');
+const utils = require('../lib/utils');
 // const isAuth = require('./authMiddleware').isAuth;
 const User = connection.models.User;
 
@@ -48,7 +49,13 @@ router.post('/auth/register', async (req, res, next) => {
     if (!emailInUse) {
       const newUser = await new User(data);
       await newUser.save();
-      res.status(201).send(newUser);
+      const jwt = utils.issueJWT(newUser);
+      res.status(201).send({
+        success: true,
+        user: newUser,
+        token: jwt.token,
+        expiresIn: jwt.expires,
+      });
     } else {
       res.status(409).json({ msg: 'Email is already in use.', error: 409 });
     }
