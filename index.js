@@ -58,10 +58,6 @@ app.use(passport.initialize());
 // Imports all of the routes from ./routes/index.js
 app.use(routes);
 
-const authRouter = require('./routes');
-
-app.use('/auth', authRouter);
-
 /**
  * -------------- SERVER ----------------
  */
