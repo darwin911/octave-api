@@ -58,9 +58,11 @@ router.post('/auth/login', (req, res, next) => {
       if (isValid) {
         const tokenObject = utils.issueJWT(user);
 
+        const cleanUser = utils.cleanUser(user);
+
         res
           .status(200)
-          .json({ success: true, user: user, token: tokenObject.token });
+          .json({ success: true, user: cleanUser, token: tokenObject.token });
       } else {
         res.status(401).json({
           success: false,
@@ -75,10 +77,10 @@ router.post('/auth/login', (req, res, next) => {
 
 // TODO
 router.post('/auth/register', async (req, res, next) => {
-  const { salt, hash } = generatePassword(req.body.pw);
+  const { salt, hash } = generatePassword(req.body.password);
 
   const data = {
-    username: req.body.uname,
+    username: req.body.username,
     email: req.body.email,
     hash: hash,
     salt: salt,
@@ -91,9 +93,10 @@ router.post('/auth/register', async (req, res, next) => {
       const newUser = await new User(data);
       await newUser.save();
       const jwt = utils.issueJWT(newUser);
+      const cleanUser = utils.cleanUser(newUser);
       res.status(201).send({
         success: true,
-        user: newUser,
+        user: cleanUser,
         token: jwt.token,
         expiresIn: jwt.expires,
       });
