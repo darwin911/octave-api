@@ -25,6 +25,18 @@ router.route('/users').get(async (req, res) => {
   }
 });
 
+// Get User By Id
+router.route('/users/:userId').get(async (req, res) => {
+  try {
+    let user = await User.findOne({ _id: req.params.userId });
+    if (user) {
+      res.json({ user });
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 /**
  * -------------- POST ROUTES ----------------
  */
