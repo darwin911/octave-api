@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const ReviewSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  venueId: { type: String, required: true },
+  score: Number,
   text: String,
-  score: String,
-  userId: String,
-  venueId: String,
 });
 
 // Expose the connection
