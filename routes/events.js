@@ -13,10 +13,23 @@ router.get('/:dmaId', async (req, res, next) => {
     const time = now.add(3, 'months');
     const threeMonthsFromNow = moment(time).format('YYYY-MM-DD');
 
+    const TM_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
+
     const resp = await axios.get(
-      `https://app.ticketmaster.com/discovery/v2/events.json?classificationName=music&dmaId=${dmaId}&endDateTime=${threeMonthsFromNow}T00:00:00Z&size=70&apikey=${API_KEY}`
+      `${TM_BASE_URL}/events.json?classificationName=music&dmaId=${dmaId}&endDateTime=${threeMonthsFromNow}T00:00:00Z&apikey=${API_KEY}`
     );
-    return res.send(resp.data._embedded.events);
+
+    // console.log(resp.data._embedded.events.map((ev) => ev.dates.status.code));
+    // let activeEvents = resp.data_embedded.events.filter(
+    //   (ev) => ev.dates.code !== 'cancelled'
+    // );
+    // console.log(activeEvents);
+    // let filtedEvents = resp.data._embedded.events.filter(
+    //   (event) => event.dates.status.code !== 'cancelled'
+    // );
+    const events = resp.data._embedded.events;
+    console.info(`Found ${events.length} events.`);
+    return res.send(events);
   } catch (error) {
     return error;
   }

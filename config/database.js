@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-
+const ReviewSchema = require('../models/review.model');
+const UserSchema = require('../models/user.model');
+const VenueSchema = require('../models/venue.model');
 require('dotenv').config();
 
 /**
@@ -24,20 +26,9 @@ connection.once('open', () => {
   console.log('*** MongoDB database connection established successfully ***');
 });
 
-// Creates simple schema for a User.  The hash and salt are derived from the user's given password when they register
-const UserSchema = new mongoose.Schema({
-  username: String,
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  hash: String,
-  salt: String,
-  admin: Boolean,
-});
-
 const User = connection.model('User', UserSchema);
+const Venue = connection.model('Venue', VenueSchema);
+const Review = connection.model('Review', ReviewSchema);
 
 // Expose the connection
 module.exports = connection;
