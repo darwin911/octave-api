@@ -45,6 +45,7 @@ router.get('/venues/:venueId', async (req, res, next) => {
       return res.status(404).json({
         sucess: false,
         msg: 'No reviews found.',
+        reviews: [],
       });
     } else {
       console.log(`${count} reviews found.`);
