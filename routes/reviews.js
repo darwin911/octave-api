@@ -36,11 +36,13 @@ router.get('/:id', async (req, res, next) => {
 // Get All Reviews for Venue by VenueId
 router.get('/venues/:venueId', async (req, res, next) => {
   try {
+    console.log('Get All Reviews for Venue by VenueId');
     const reviews = await Review.find({ venueId: req.params.venueId });
     let count = reviews.length;
+    console.log({ count });
     if (!count) {
       console.log('Returing reviews:', reviews);
-      return reviews;
+      return res.send({ success: true, reviews });
     } else {
       console.log(`${count} reviews found.`);
       return res.json({
