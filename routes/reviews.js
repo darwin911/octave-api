@@ -3,6 +3,7 @@ const connection = require('../config/database');
 const isEmpty = require('lodash');
 const Review = connection.models.Review;
 
+// Get All Reviews
 router.get('/', async (req, res, next) => {
   try {
     const reviews = await Review.find();
@@ -14,6 +15,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// Get Review By Id
 router.get('/:id', async (req, res, next) => {
   try {
     const review = await Review.findOne({ venueId: req.params.id });
@@ -58,6 +60,7 @@ router.get('/venues/:venueId', async (req, res, next) => {
   }
 });
 
+// POST - "/reviews/venues"
 router.post('/venues', async (req, res, next) => {
   const { userId, venueId } = req.body;
   try {
@@ -95,6 +98,7 @@ router.post('/venues', async (req, res, next) => {
   }
 });
 
+// DELETE Review by Id
 router.delete('/:id', async (req, res, next) => {
   try {
     const review = await Review.findByIdAndDelete(req.params.id);
