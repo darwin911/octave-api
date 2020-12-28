@@ -11,7 +11,7 @@ router.get('/', async (req, res, next) => {
     return res.send({ reviews });
   } catch (error) {
     console.error(error);
-    return error;
+    return { success: false, error };
   }
 });
 
@@ -29,24 +29,18 @@ router.get('/:id', async (req, res, next) => {
     }
   } catch (error) {
     console.error(error);
-    return error;
+    return { success: false, error };
   }
 });
 
 // Get All Reviews for Venue by VenueId
 router.get('/venues/:venueId', async (req, res, next) => {
   try {
-    console.log('params', req.params);
     const reviews = await Review.find({ venueId: req.params.venueId });
     let count = reviews.length;
-    console.log({ count: count });
     if (!count) {
-      console.log('No reviews found.', `!count: ${!count}`);
-      return res.status(404).json({
-        sucess: false,
-        msg: 'No reviews found.',
-        reviews: [],
-      });
+      console.log('Returing reviews:', reviews);
+      return reviews;
     } else {
       console.log(`${count} reviews found.`);
       return res.json({
@@ -57,7 +51,7 @@ router.get('/venues/:venueId', async (req, res, next) => {
     }
   } catch (error) {
     console.error(error);
-    return error;
+    return { success: false, error };
   }
 });
 
