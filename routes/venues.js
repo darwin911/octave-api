@@ -1,6 +1,8 @@
 const router = require('express').Router();
+const { default: axios } = require('axios');
 const connection = require('../config/database');
 const Venue = connection.models.Venue;
+const API_KEY = process.env.TICKETMASTER_API_KEY;
 
 /**
  * Get All Venues
@@ -26,11 +28,21 @@ router.get('/:venueId', async (req, res, next) => {
     if (venue) {
       return res.send(venue);
     } else {
-      return res.status(404).json({ msg: 'Venue not found in database.' });
+      const resp = await axios.get(
+        `https://app.ticketmaster.com/discovery/v2/venues/${req.params.venueId}.json?apikey=${API_KEY}`
+      );
+      if (resp.data) {
+        return res.send({ success: true, venue: resp.data });
+      }
+      return res.status(404).json({
+        success: false,
+        msg: 'Venue not found in database.',
+        venueId: req.params.venueId,
+      });
     }
   } catch (error) {
     console.error(error);
-    return error;
+    return { success: false, error };
   }
 });
 
@@ -39,7 +51,7 @@ router.post('/', async (req, res, next) => {
     const dbVenue = await Venue.findOne({
       where: { venueId: req.body.venueId },
     });
-    console.log('VENUE: ', dbVenue);
+    console.log('Database Venue: ', dbVenue);
     if (!dbVenue) {
       // create venue
       const venueData = {
@@ -64,8 +76,8 @@ router.post('/', async (req, res, next) => {
         .json({ success: false, msg: 'Venue already exists.' });
     }
   } catch (error) {
-    res.status(500).send(error);
-    throw error;
+    console.error(error);
+    return { success: false, error };
   }
 });
 
