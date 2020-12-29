@@ -1,51 +1,75 @@
 const router = require('express').Router();
 const moment = require('moment');
 const axios = require('axios');
+
 const API_KEY = process.env.TICKETMASTER_API_KEY;
+const BASE_URL = 'https://app.ticketmaster.com';
+const TM_URL = new URL('/discovery/v2/events.json?', BASE_URL);
+
 ///////////////// TICKETMASTER API //////////////////
 
-// Show all events
+const getEvents = async (nextURL, eventList) => {
+  console.log('getEvents');
+  if (nextURL) {
+    const url = new URL(nextURL, BASE_URL);
+    const key = String(API_KEY);
+    url.searchParams.append('apikey', key);
+    const resp = await axios.get(url.href);
+    resp.data._embedded.events = eventList.concat(
+      resp.data._embedded.events.map(
+        ({ id, dates, images, name, priceRanges, url, _embedded }) => ({
+          id,
+          dates,
+          images,
+          name,
+          priceRanges,
+          url,
+          _embedded: {
+            venues: _embedded.venues,
+          },
+        })
+      )
+    );
+    console.log(resp.data._embedded.events.length);
+    return resp.data;
+  } else {
+    const resp = await axios.get(TM_URL.href);
+    return resp.data;
+  }
+};
 
+const getEntireEventList = async (nextURL = '', prevEvents) => {
+  const results = await getEvents(nextURL, prevEvents);
+  const next = results._links.next && results._links.next.href;
+  console.log('Retreiving data from API for page : ' + results.page.number);
+
+  if (next) {
+    console.log('calling', next);
+    return await getEntireEventList(next, results._embedded.events);
+  } else {
+    console.log('last time around!');
+    return results;
+  }
+};
+
+// Show all events
 router.get('/:dmaId', async (req, res, next) => {
   console.time('getEvents');
-
   try {
-    const dmaId = req.params.dmaId || '345'; // Defaults to 345: New York
-    let now = moment();
-    const time = now.add(3, 'months');
-    const threeMonthsFromNow = moment(time).format('YYYY-MM-DD');
+    const { dmaId = 345 } = req.params; // Defaults to 345: New York
 
-    const BASE_URL = 'https://app.ticketmaster.com';
-    const classification = 'classificationName=music';
-    const sizeVal = '200';
-    const URL = `${BASE_URL}/discovery/v2/events.json?${classification}&size=${sizeVal}&dmaId=${dmaId}&endDateTime=${threeMonthsFromNow}T00:00:00Z&apikey=${API_KEY}`;
+    const searchParams = new URLSearchParams({
+      classificationName: 'music',
+      size: 200,
+      dmaId: dmaId,
+      apikey: API_KEY,
+    }).toString();
+    TM_URL.search = searchParams;
 
-    const resp = await axios.get(URL);
+    const data = await getEntireEventList();
+    console.log('We made it paste the data fetching!. Hopefully.');
 
-    const events = resp.data._embedded.events;
-    console.info(`Found ${events.length} events.`);
-    const {
-      page: { size, totalElements },
-      _links,
-    } = resp.data;
-    console.log({ size, totalElements });
-    if (size < totalElements) {
-      const nextURL = `${BASE_URL}${_links.next.href}&apikey=${API_KEY}`;
-      console.log('fetching more events...');
-      console.log({ nextURL });
-      const nextData = await axios.get(nextURL);
-
-      const nextEvents = nextData.data._embedded.events;
-      console.log(`\nNext Events:\n`, nextEvents.length, '\n');
-
-      const allEvents = [...events, ...nextEvents];
-
-      console.log(`Found ${allEvents.length} in All events.`);
-      console.timeEnd('getEvents');
-      return res.send(allEvents);
-    }
-    console.timeEnd('getEvents');
-    return res.send(events);
+    return res.send(data._embedded.events);
   } catch (error) {
     console.log(error);
     return error;
