@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
   try {
     const searchParams = new URLSearchParams({
       ...req.query,
+      size: 200,
       apikey: API_KEY,
     }).toString();
     TM_URL.search = searchParams;
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
       return res.send(data._embedded.events);
     }
   } catch (error) {
-    console.log(error);
+    console.log(error && error.response);
     return error;
   }
 });
@@ -64,6 +65,7 @@ const getEvents = async (nextURL, eventList) => {
       )
     );
     console.log(resp.data._embedded.events.length);
+    console.log('total:', resp.data.page.totalElements);
     return resp.data;
   } else {
     const resp = await axios.get(TM_URL.href);
