@@ -21,6 +21,9 @@ router.get('/', async (req, res) => {
     const data = await getEntireEventList();
 
     if (data) {
+      if (data.length === 0) {
+        return res.send(data);
+      }
       console.log('Sending you back:', data._embedded.events.length);
       return res.send(data._embedded.events);
     }
@@ -81,6 +84,9 @@ const getEntireEventList = async (nextURL = '', prevEvents) => {
   if (next) {
     console.log('calling', next);
     return await getEntireEventList(next, results._embedded.events);
+  } else if (!results._embedded) {
+    console.log('No results found.');
+    return [];
   } else {
     console.log('last time around!');
     return results;
